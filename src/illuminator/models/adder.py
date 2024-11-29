@@ -7,6 +7,7 @@ from typing import List
 
 from illuminator.builder import IlluminatorModel, ModelConstructor
 
+
 # Define the model parameters, inputs, outputs...
 adder = IlluminatorModel(
     parameters={"param1": "addition"},
@@ -16,6 +17,7 @@ adder = IlluminatorModel(
     time_step_size=1,
     time=None
 )
+
 
 # construct the model
 class Adder(ModelConstructor):
@@ -37,7 +39,7 @@ class Adder(ModelConstructor):
                     model_instance.inputs[inputname] = value[first_key]
                     # print(f"The dictionary value: {value[first_key]}")
 
-        self._model.outputs["out1"] = self._model.inputs["in1"] + self._model.inputs["in2"] # TODO do we add values internally or based on the current inputs
+        self._model.outputs["out1"] = self._model.inputs["in1"] + self._model.inputs["in2"] 
         print("result:", self._model.outputs["out1"])
 
         return time + self._model.time_step_size
