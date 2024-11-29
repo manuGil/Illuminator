@@ -134,21 +134,36 @@ class ModelConstructor(ABC, Simulator):
 
     def __init__(self, **kwargs) -> None:
         #model: IlluminatorModel
-        model_vals = engine.current_model
+        # model_vals = engine.current_model
 
-        model = IlluminatorModel(
-                parameters=model_vals['parameters'],
-                inputs=model_vals["inputs"],
-                outputs=model_vals["outputs"],
-                states={},
-                model_type=model_vals["type"]
-            )
+        # model = IlluminatorModel(
+        #         parameters=model_vals['parameters'],
+        #         inputs=model_vals["inputs"],
+        #         outputs=model_vals["outputs"],
+        #         states={},
+        #         model_type=model_vals["type"]
+        #     )
         
-        super().__init__(meta=model.simulator_meta)
-        self._model = model
+        self._model = None
+        # self._model = model
         self.model_entities = {}
         self.time = 0  # time is an interger wihout a unit
 
+    @property
+    def model(self) -> IlluminatorModel:
+        return self._model
+        
+    
+    @model.setter
+    def model(self, model: IlluminatorModel) -> None:
+        # TODO: cotinue here
+
+        if not isinstance(model, IlluminatorModel):
+            raise TypeError("Model must be an instance of IlluminatorModel")
+        else:
+            self._model = model
+            super().__init__(meta=self._model.simulator_meta)
+    
     @abstractmethod
     def step(self, time:int, inputs:dict=None, max_advance:int=None) -> int:
         """Defines the computations that need to be performed in each
