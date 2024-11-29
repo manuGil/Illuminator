@@ -11,7 +11,7 @@ class SimulatorType(Enum):
     EVENT_BASED = 'event-based'
     HYBRID = 'hybrid'
 
-# TOOD: IMPORTANT 
+# TODO: IMPORTANT 
 # each model file must provide a way to run it remotely. In the current implementation,
 # that is achieved by including a the folloowing code on the simulator file:
 # def main():
@@ -57,18 +57,30 @@ class IlluminatorModel():
     outputs: Dict = field(default_factory=dict)
     states: Dict = field(default_factory=dict)
     triggers: Optional[Dict] = field(default_factory=list)
-    simulator_type: SimulatorType = SimulatorType.TIME_BASED
+    _simulator_type: SimulatorType = SimulatorType.TIME_BASED
     time_step_size: int = 900   # This is closely related to logic in the step method. 
     # Currently, all models have the same time step size (15 minutes). 
     # This is a global setting for the simulation, not a model-specific setting.
     time: Optional[datetime] = None  # Shouldn't be modified by the user.
     model_type: Optional[str] = "Model" 
-    
 
     def __post_init__(self):
         self._validate_states()
         self._validate_triggers()
         # self.validate_simulator_type()
+
+    @property
+    def simulator_type(self):
+        return self._simulator_type
+    
+    @simulator_type.setter
+    def simulator_type(self, new_type: SimulatorType) -> None:
+        """Changes the simulator type of the model"""
+        if not isinstance(new_type, SimulatorType):
+            raise TypeError("Simulator type must be an instance of SimulatorType")
+        else:   
+            self._simulator_type = new_type
+    
     
     @property
     def simulator_meta(self) -> dict:
@@ -113,17 +125,17 @@ class IlluminatorModel():
             raise ValueError("Triggers are required in event-based simulators")
 
 
-# COTINUE FROM HERE
 # need to find a convenient an easy way to define new models
 # Ideas:
 # - add model definition as a method of the ModelConstructor class. will it work?
 
 class ModelConstructor(ABC, Simulator):
-    """A common interface for constructing models in the Illuminator"""
+    """An interface between Illuminator's models and the Mosaik API."""
 
     def __init__(self, **kwargs) -> None:
         #model: IlluminatorModel
         model_vals = engine.current_model
+
         model = IlluminatorModel(
                 parameters=model_vals['parameters'],
                 inputs=model_vals["inputs"],
@@ -131,6 +143,7 @@ class ModelConstructor(ABC, Simulator):
                 states={},
                 model_type=model_vals["type"]
             )
+        
         super().__init__(meta=model.simulator_meta)
         self._model = model
         self.model_entities = {}
@@ -139,7 +152,7 @@ class ModelConstructor(ABC, Simulator):
     @abstractmethod
     def step(self, time:int, inputs:dict=None, max_advance:int=None) -> int:
         """Defines the computations that need to be performed in each
-        simulation step
+        simulation step. The logic in this method is computed by Mosiak.
 
         Parameters
         ----------
