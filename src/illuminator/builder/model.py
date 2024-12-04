@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
-import illuminator.engine as engine
+# import illuminator.engine as engine
 from mosaik_api_v3 import Simulator
 
 class SimulatorType(Enum):
@@ -49,7 +49,7 @@ class IlluminatorModel():
     time: int
         The current time of the simulation.
     model_type: str
-        A name for the class of model that is being defined. Default 'Model'.
+        A name for the class of model that is being defined. Default None.
     """
 
     parameters: Dict = field(default_factory=dict)    
@@ -62,7 +62,7 @@ class IlluminatorModel():
     # Currently, all models have the same time step size (15 minutes). 
     # This is a global setting for the simulation, not a model-specific setting.
     time: Optional[datetime] = None  # Shouldn't be modified by the user.
-    model_type: Optional[str] = "Model" 
+    model_type: Optional[str] = None 
 
     def __post_init__(self):
         self._validate_states()
@@ -144,7 +144,10 @@ class ModelConstructor(ABC, Simulator):
         #         model_type=model_vals["type"]
         #     )
         
-        self._model = None
+        if 'model' in kwargs:
+            self._model = kwargs['model']
+        else:
+            self._model = None
         # self._model = model
         self.model_entities = {}
         self.time = 0  # time is an interger wihout a unit
@@ -156,8 +159,6 @@ class ModelConstructor(ABC, Simulator):
     
     @model.setter
     def model(self, model: IlluminatorModel) -> None:
-        # TODO: cotinue here
-
         if not isinstance(model, IlluminatorModel):
             raise TypeError("Model must be an instance of IlluminatorModel")
         else:
@@ -176,9 +177,8 @@ class ModelConstructor(ABC, Simulator):
         inputs: dict
             The inputs to the model.
         max_advance: int
-            Time until the simulator can safely advance its internal time without creating a causality error.
+            Time until the Mosaik simulator can safely advance without creating a causality error.
             Optional in most cases.
-
 
         Returns
         -------
@@ -188,31 +188,55 @@ class ModelConstructor(ABC, Simulator):
         """
         pass
 
-    def init(self, sid, time_resolution=1, **sim_params):  # can be use to update model parameters set in __init__
-        print(f"running extra init")
-        # This is the standard Mosaik init method signature
+    def init(self, sid, time_resolution=1, **sim_params):  
+        """
+        This method is used to pass aditional parameters to the simulatior at initialization.
+        It is called by `world.start()`.
+        """
+             # what if we pass the model as a parameter here?, and call the model
+        # TODO: [Manuel] this shoudn't be necessary. 
+        # can be use to update model parameters set in __init__
+
         self.sid = sid
         self.time_resolution = time_resolution
+        # sets a model using 
+        # CONTINUE HERE
+        print("**sim_params: ", sim_params)
+        # model = IlluminatorModel(
+        #     parameters=sim_params['parameters'],
+        #     inputs=sim_params['inputs'],
+        #     outputs=sim_params['outputs'],
+        #     states=sim_params['states'],
+        #     time_step_size=sim_params['time_step_size'],
+        #     time=sim_params['time']
+        # )
+        # self.model(model)
+
+        print(f"running extra init")
+        # This is the standard Mosaik init method signature
+        # self.sid = sid
+        # self.time_resolution = time_resolution
 
         # This bit of code is unused.
         # Assuming sim_params is structured as {'sim_params': {model_name: model_data}}
-        sim_params = sim_params.get('sim_params', {})
-        if len(sim_params) != 1:
-            raise ValueError("Expected sim_params to contain exactly one model.")
+        # sim_params = sim_params.get('sim_params', {})
+        # if len(sim_params) != 1:
+        #     raise ValueError("Expected sim_params to contain exactly one model.")
+
 
         # # Extract the model_name and model_data
         # self.model_name, self.model_data = next(iter(sim_params.items()))
         # self.model = self.load_model_class(self.model_data['model_path'], self.model_data['model_type'])
         return self._model.simulator_meta
     
-    def create(self, num:int, model:str, **model_params) -> List[dict]: # This change is mandatory. It MUST contain num and model as parameters otherwise it receives an incorrect number of parameters
+    def create(self, num:int) -> List[dict]:  # **model_params) # This change is mandatory. It MUST contain num and model as parameters otherwise it receives an incorrect number of parameters
         """Creates an instance of the model"""
         new_entities = [] # See below why this was created
         for i in range(num): # this seems ok
             eid = f"{self._model.simulator_type.value}_{i}" # this seems ok
             self.model_entities[eid] = self._model # this seems fine
         # return list(self.model_entities.keys()) # I removed this bit for now. Create is expected to return a list of dictionaries
-            new_entities.append({'eid': eid, 'type': model})  # So basically, like this. Later on we can look into other alternatives if needed.
+            new_entities.append({'eid': eid, 'type': self._model})  # So basically, like this. Later on we can look into other alternatives if needed.
         return new_entities
     
     def current_time(self): 
@@ -246,5 +270,6 @@ class ModelConstructor(ABC, Simulator):
 
 
 if __name__ == "__main__":
+
 
     pass
