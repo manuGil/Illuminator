@@ -10,6 +10,7 @@ from mosaik.scenario import Entity as MosaikEntity
 from mosaik.scenario import World as MosaikWorld
 from datetime import datetime
 from illuminator.schema.simulation import load_config_file
+from illuminator.builder.model import IlluminatorModel
 
 current_model = {}
 
@@ -159,8 +160,11 @@ def start_simulators(world: MosaikWorld, models: list) -> dict:
         for model in models:
             model_name = model['name']
             model_type = model['type']
-            set_current_model(model)
+            # create an instace of IlluminaorModel from the model configuation
 
+            # set_current_model(model)
+
+            # illuminator_model = create_illuminator_model(model)
 
             if 'parameters' in model:
                 model_parameters = model['parameters']
@@ -179,10 +183,11 @@ def start_simulators(world: MosaikWorld, models: list) -> dict:
                 entity = model_factory.create(num=1)
                 
             else:
+                print ('model:', model)
                 simulator = world.start(sim_name=model_name,
                                     # **model_parameters
                                     model_name = model_name,
-                                    sim_params= {model_name: model} # This value gets picked up in the init() function
+                                    sim_params=  model # This value gets picked up in the init() function
                                     # Some items must be passed here, and some other at create()
                                     )
         
@@ -190,7 +195,9 @@ def start_simulators(world: MosaikWorld, models: list) -> dict:
                 # TODO: model_type must match model name in META for the simulator
                 
                 # allows instantiating an entity by using the value of 'model_type' dynamically
-                model_factory = getattr(simulator, model_type) 
+                print('model_factory:', simulator)
+    
+                model_factory = getattr(simulator, model_type)  # TODO: We have set the correct name to model defintion in adder.py. Will that work for other models?
                 # Mulple entities entities for the same model are created
                 # one at a time. This is by design.
                 # TODO: parameters must be passed as **kwargs in create().
@@ -210,7 +217,10 @@ def start_simulators(world: MosaikWorld, models: list) -> dict:
         #                                     cap=500,
         #                                     output_type='power'
         #                                     )
-            entity = model_factory.create(num=1, param1="Not in use") 
+
+            print('model_factory type :', type(model_factory))
+            # entity = model_factory()
+            entity = model_factory.create() # PARAms MUST BE PASSED HERE 
 
             model_entities[model_name] = entity
             print(model_entities)
@@ -298,7 +308,21 @@ def compute_mosaik_end_time(start_time:str, end_time:str, time_resolution:int = 
 # def get_current_model():
 #     return current_model
 
-def set_current_model(model):
+
+def create_illuminator_model(model: dict) -> IlluminatorModel:
+    """create a IlluminatorModel object from a model configuration"""
+
+    model = IlluminatorModel(
+        parameters=model['parameters'],
+        inputs=model['inputs'],
+        outputs=model['outputs'],
+        states=model['states'],
+        time_step_size=model['time_step_size'],
+        time=model['time']
+    )
+    return model
+
+def set_current_model(model): # TODO: this should be depricated
     global current_model
     try:
         current_model["type"] = model['type']
