@@ -15,13 +15,18 @@ adder = IlluminatorModel(
     outputs={"out1": 0},
     states={"out1": 0},
     time_step_size=1,
-    time=None
+    time=None,
+    model_type='Adder'
 )
 
 
 # construct the model
 class Adder(ModelConstructor):
 
+    def __init__(self):
+        """Associates one IlluminatorModel with the ModelConstructor"""
+        super().__init__(model=adder) # this is necessary to register a IlluminatorModel  its constructor
+    
     def step(self, time, inputs, max_advance=900) -> None:
         print(f"inputs: {inputs}")
         print(f'internal inputs: {self._model.inputs}')
@@ -48,6 +53,23 @@ class Adder(ModelConstructor):
 if __name__ == '__main__':
     # Create a model by inheriting from ModelConstructor
     # and implementing the step method
-    adder_model = Adder(adder)
+    adder_model = Adder()
+    print(type(adder_model))
 
-    print(adder_model.step(1))
+    print(adder_model.create(1))
+
+    # print('model: ', adder_model.model)
+    # set model to constructor
+    # adder_model.model = adder
+
+    # print(adder_model.model)
+    # print('type adder model:', type(adder_model))
+    # print('simulator meta:', adder_model.model.simulator_meta)
+
+
+    # Documentation: adder and other models in the illuminator are
+    # metadata and business logic containers. Computatation are delegated
+    # to the simulation engine, which in turns uses Mosaik to run and manage the simulations.   
+
+
+    # print(adder_model.step(1))
